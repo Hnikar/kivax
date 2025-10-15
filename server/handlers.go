@@ -10,33 +10,41 @@ import (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
 }
 
-func WsHandler(w http.ResponseWriter, r *http.Request) {
+func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request, roomId string) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Printf("Ошибка при повышении до WebSocket: %+v", err)
+		log.Println(err)
 		return
 	}
-	defer conn.Close()
 
-	log.Println("✅ Клиент успешно подключился по WebSocket")
-
-	for {
-		messageType, p, err := conn.ReadMessage()
-		if err != nil {
-			log.Println("Ошибка при чтении сообщения:", err)
-			break
+	room, ok := hub.rooms[roomId]
+	if !ok {
+		room = &Room{
+			ID:        roomId,
+			clients:   make(map[*Client]bool),
+			broadcast: make(chan []byte),
+			join:      make(chan *Client),
+			leave:     make(chan *Client),
 		}
-		log.Printf("📥 Получено сообщение: %s", string(p))
-
-		if err := conn.WriteMessage(messageType, p); err != nil {
-			log.Println("Ошибка при отправке сообщения:", err)
-			break
-		}
+		hub.registerRoom <- room
+		go room.Run()
 	}
+
+	client := &Client{
+		conn: conn,
+		send: make(chan []byte, 256),
+		room: room,
+	}
+
+	client.room.join <- client
+
+	go client.writePump()
+	go client.readPump()
+
+	log.Printf("Клиент подключился к комнате %s. Всего клиентов: %d", client.room.ID, len(client.room.clients))
 }
