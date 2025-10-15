@@ -1,3 +1,4 @@
+// server/main.go
 package main
 
 import (
@@ -9,8 +10,12 @@ import (
 func main() {
 	router := gin.Default()
 
+	router.GET("/ws", func(c *gin.Context) {
+		WsHandler(c.Writer, c.Request)
+	})
+
 	router.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, "Hello, World!")
+		c.String(http.StatusOK, "Сервер на Gin работает.")
 	})
 
 	router.Run(":8080")
