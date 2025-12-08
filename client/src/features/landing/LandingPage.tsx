@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 
+// import useQuery from "@tanstack/react-query";
 export default function LandingPage() {
 	return (
 		<div className="min-h-screen flex items-center justify-center">
