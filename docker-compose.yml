@@ -1,0 +1,15 @@
+services:
+  server:
+    build: ./server
+    ports:
+      - "8080:8080"
+    restart: always
+
+  client:
+    build: ./client
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=ws://localhost:8080
+    depends_on:
+      - server
